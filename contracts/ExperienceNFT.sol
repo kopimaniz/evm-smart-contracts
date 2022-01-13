@@ -155,6 +155,8 @@ contract ExperienceNFT is ERC721Upgradeable, Constant {
                 e.price = price;
                 e.ticketLeft = totalTickets;
                 e.rockId = rockId;
+                e.start = start;
+                e.end = end;
 
                 _mint(host, i);
 

@@ -3,6 +3,7 @@ const ExperienceNFT = artifacts.require("ExperienceNFT");
 const RockNFT = artifacts.require("RockNFT");
 const TicketNFT = artifacts.require("TicketNFT");
 const truffleAssert = require('truffle-assertions');
+const TransparentUpgradeableProxy = artifacts.require("TransparentUpgradeableProxy");
 
 /*
  * uncomment accounts to access the test accounts made available by the
@@ -17,15 +18,14 @@ contract("TicketNFT", function (accounts) {
   let ticketAddress;
 
   before("should init instance of contracts", async function () {
-    metaverseNFT = await MetaverseNFT.deployed();
+    const tranparent = await TransparentUpgradeableProxy.deployed();
+    metaverseNFT = await MetaverseNFT.at(tranparent.address);;
     const rockContractId = await metaverseNFT.getRockNFT();
-    console.log({rockContractId});
     rockNFT = await RockNFT.at(rockContractId);
     const experienceContractId = await rockNFT.getExperienceNFT();
     console.log({experienceContractId});
     experienceNFT = await ExperienceNFT.at(experienceContractId);
     ticketAddress= await experienceNFT.getTicketNFT();
-    console.log({ticketAddress});
     ticketNFT = await TicketNFT.at(ticketAddress);
   });
 
@@ -34,7 +34,7 @@ contract("TicketNFT", function (accounts) {
   });
 
   it("should fail cause only experienceNFT can mint", async () => {
-    await truffleAssert.reverts(ticketNFT.mintTicket(accounts[1], 'Im ticket 1', {
+    await truffleAssert.reverts(ticketNFT.mintTicket(accounts[1], 1, {
     from: accounts[1]
   }))});
 });

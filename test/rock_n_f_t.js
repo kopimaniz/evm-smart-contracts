@@ -3,6 +3,7 @@ const MetaverseNFT = artifacts.require("MetaverseNFT");
 const truffleAssert = require('truffle-assertions');
 var Web3 = require('web3');
 const web3 = new Web3();
+const TransparentUpgradeableProxy = artifacts.require("TransparentUpgradeableProxy");
 
 /*
  * uncomment accounts to access the test accounts made available by the
@@ -15,7 +16,8 @@ contract("RockNFT", function (accounts) {
   let rockContractId;
 
   before("should init instance of contracts", async function () {
-    metaverseNFT = await MetaverseNFT.deployed();
+    const tranparent = await TransparentUpgradeableProxy.deployed();
+    metaverseNFT = await MetaverseNFT.at(tranparent.address);
     rockContractId = await metaverseNFT.getRockNFT();
     console.log({rockContractId});
     rockNFT = await RockNFT.at(rockContractId);
@@ -26,12 +28,12 @@ contract("RockNFT", function (accounts) {
   });
 
   it("Can not mint rock only metaverseNFT can do", async () => {
-    await truffleAssert.reverts(rockNFT.mintRock(1, accounts[0], web3.utils.toBN(1e18), 'Im rock 1',  {
+    await truffleAssert.reverts(rockNFT.mintRock(1, accounts[0], web3.utils.toBN(1e18),  {
     from: accounts[1]
   }))});
 
   it("Can not breed rock cause only metaverseNFT can do", async () => {
-    await truffleAssert.reverts(rockNFT.breedRock(1, accounts[0], 1, 1, web3.utils.toBN(1e18), 'Im rock 1',  {
+    await truffleAssert.reverts(rockNFT.breedRock(1, accounts[0], 1, 1, web3.utils.toBN(1e18),  {
     from: accounts[1]
   }))});
 

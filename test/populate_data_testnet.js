@@ -1,6 +1,7 @@
 const MetaverseNFT = artifacts.require("MetaverseNFT");
 const Rove = artifacts.require("Rove");
 const RockNFT = artifacts.require("RockNFT");
+const TransparentUpgradeableProxy = artifacts.require("TransparentUpgradeableProxy");
 
 /*
  * uncomment accounts to access the test accounts made available by the
@@ -23,9 +24,8 @@ contract("Popular data", function (accounts) {
     });
   
     let revenue = [web3.utils.toBN(1e18), web3.utils.toBN(1e3), web3.utils.toBN(1e3)]; // 1e3 ~ 10%
-    let rentalFees = [web3.utils.toBN(1e18), web3.utils.toBN(1e18)];
-    let rockTokenURIs = ['Im rock 1', 'Im rock 2'];
-    let metaverURI = 'Im metaverse 1';
+    let defaultFee = web3.utils.toBN(1e18);
+    let numberOfgenesisRock = 2;
     
     it('should mint the token', async () => {
       await roveToken.mint(testAddress, web3.utils.toBN(100e18));
@@ -35,8 +35,8 @@ contract("Popular data", function (accounts) {
   
     it('create new metaverse', async () => {
       await roveToken.approve(metaverseNFT.address, web3.utils.toBN('100000000000000000000'));
-      await metaverseNFT.mintMetaverse(testAddress, testAddress, rentalFees, rockTokenURIs, revenue, metaverURI);
-      await metaverseNFT.mintMetaverse(testAddress, testAddress, rentalFees, rockTokenURIs, revenue, metaverURI);
+      await metaverseNFT.mintMetaverse(testAddress, testAddress, numberOfgenesisRock, defaultFee, revenue);
+      await metaverseNFT.mintMetaverse(testAddress, testAddress, numberOfgenesisRock, defaultFee, revenue);
       const bal = await metaverseNFT.balanceOf(testAddress); 
       const globaDAOBal = await roveToken.balanceOf(testAddress);
       console.log(globaDAOBal.toString());

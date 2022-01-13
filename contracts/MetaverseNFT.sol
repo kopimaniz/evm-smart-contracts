@@ -66,14 +66,14 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
         //         emit RockContractCreated(address(_rockNFT));
         // }
  
-        function initialize(IParameterControl globalParameters, IRove rove, address rockImpl, address metaverseImpl, address implementationAdmin) initializer public {
+        function initialize(IParameterControl globalParameters, IRove rove, address rockImpl, address expImpl, address implementationAdmin) initializer public {
                 __ERC721_init("Metaverse", "M");
                 _rove = rove;
                 _globalParameters = globalParameters;
                 _rockNFT = IRockNFT(address(new TransparentUpgradeableProxy(
                         rockImpl, 
                         implementationAdmin, 
-                        abi.encodeWithSignature('initialize(address,address,address,address,address)', address(rove), address(globalParameters), address(this), metaverseImpl, implementationAdmin)
+                        abi.encodeWithSignature('initialize(address,address,address,address,address)', address(rove), address(globalParameters), address(this), expImpl, implementationAdmin)
                 )));
 
                 emit RockContractCreated(address(_rockNFT));
@@ -101,7 +101,7 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
 
                 _mint(founder, i);
                 uint[] memory rocks = new uint256[](numberOfGenesisRocks);
-                for (uint256 j = 0; i < numberOfGenesisRocks; i++) {
+                for (uint256 j = 0; j < numberOfGenesisRocks; j++) {
                         rocks[j] = _rockNFT.mintRock(i, founder, defaultFee);
                 }
 
