@@ -19,20 +19,18 @@ interface IMetaverseNFT {
         function mintMetaverse(
                 address founder,
                 address metaverseDAO,
-                uint256[] memory rentalFees,
-                string[] memory rockTokenURIs,
-                Revenue memory revenue,
-                string memory tokenURI
+                uint256 numberOfGenesisRocks,
+                uint256 defaultFee,
+                Revenue memory revenue
         ) external returns (uint256 metaverseId);
 
         // Breeds a new rock. Rover must pay a breeding fee.
         // Caller: Platform
         function breedRock(
                 uint256 metaverseId, 
-                uint256 dadId,
-                uint256 momId,
-                uint256 rentalFee,
-                string memory tokenURI
+                uint256 dadId, 
+                uint256 momId, 
+                uint256 rentalFee
         ) external returns (uint256 childId);
 
         // Getters
@@ -58,6 +56,7 @@ interface IMetaverseNFT {
         function setRevenue(uint256 metaverseId, Revenue memory revenue) external;
 
         // Events
-        event NewMetaverse(address owner, uint256 metaverseId, uint256[] rocks, uint256[] rentalFees, string[] rockTokenURIs, string tokenURI);
+        event NewMetaverse(address owner, uint256 metaverseId, uint256[] rocks, uint256 defaultFee);
         event Breed(address owner, uint256 dadId, uint256 momId, uint256 rockId, uint256 metaverseId, uint256 rentalFee);
+        event RockContractCreated(address contractId);
 }

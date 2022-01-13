@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0; 
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./IParameterControl.sol";
 import "./TicketNFT.sol";
@@ -43,7 +42,7 @@ interface IMetaverseNFT_ {
  *
  */
 
-contract ExperienceNFT is ERC721URIStorage, Constant {
+contract ExperienceNFT is ERC721Upgradeable, Constant {
 
         struct Experience {
                 uint256 rockId;
@@ -53,7 +52,6 @@ contract ExperienceNFT is ERC721URIStorage, Constant {
                 uint256 start;
                 uint256 end;
                 uint256 ticketLeft;
-                string ticketUrl;
         }
 
         // Every experience is a "mini" DAO of creators. 
@@ -84,20 +82,36 @@ contract ExperienceNFT is ERC721URIStorage, Constant {
         }
 
         event UpdateCreators(uint256 experienceId, address[] creators, uint256[] shares);
-        event NewExperience(uint256 experienceId, uint256 start, uint256 end, string tokenURI);
+        event NewExperience(uint256 experienceId, uint256 start, uint256 end, uint256 rockId, address host);
         event CollectPayment(uint256 experienceId, address creator, uint256 amount);
-        event NewTicket(uint256 experienceId, address buyer, string tokenURI);
+        event NewTicket(uint256 experienceId, address buyer, uint256 ticketId);
         event UpdateTicketPrice(uint256 experienceId, uint256 price);
         event TicketNFTCreated(address);
 
-        constructor(
+        // constructor(
+        //         address rockNFT, 
+        //         address metaverseNFT,
+        //         IParameterControl globalParameters,
+        //         address rove
+        // ) 
+        //         ERC721("Experience", "E") 
+        // {
+        //         _ticketNFT = new TicketNFT(address(this));
+        //         _rockNFT = IRockNFT_(rockNFT);
+        //         _metaverseNFT = IMetaverseNFT_(metaverseNFT);
+        //         _globalParameters = globalParameters;
+        //         _rove = IRove_(rove);
+
+        //         emit TicketNFTCreated(address(_ticketNFT));
+        // }
+
+        function initialize(
                 address rockNFT, 
                 address metaverseNFT,
                 IParameterControl globalParameters,
                 address rove
-        ) 
-                ERC721("Experience", "E") 
-        {
+        ) initializer public {
+                __ERC721_init("Experience", "E");
                 _ticketNFT = new TicketNFT(address(this));
                 _rockNFT = IRockNFT_(rockNFT);
                 _metaverseNFT = IMetaverseNFT_(metaverseNFT);
@@ -112,9 +126,7 @@ contract ExperienceNFT is ERC721URIStorage, Constant {
                 uint256 price,
                 uint256 start,
                 uint256 end,
-                uint256 totalTickets,
-                string memory ticketUrl,
-                string memory tokenURI
+                uint256 totalTickets
         )
                 external
                 returns (uint256)
@@ -141,14 +153,12 @@ contract ExperienceNFT is ERC721URIStorage, Constant {
                 _rockNFT.addTimeSlot(start, end, rockId);
                 Experience storage e = _experiences[i]; 
                 e.price = price;
-                e.ticketUrl = ticketUrl;
                 e.ticketLeft = totalTickets;
                 e.rockId = rockId;
 
                 _mint(host, i);
-                _setTokenURI(i, tokenURI);
 
-                emit NewExperience(i, start, end, tokenURI);
+                emit NewExperience(i, start, end, rockId, host);
                 return i;
         }
 
@@ -241,9 +251,9 @@ contract ExperienceNFT is ERC721URIStorage, Constant {
                         e.revenue += e.price;
                 }
 
-                _ticketNFT.mintTicket(buyer, e.ticketUrl);
+                uint ticketId = _ticketNFT.mintTicket(buyer, experienceId);
 
-                emit NewTicket(experienceId, buyer, e.ticketUrl);
+                emit NewTicket(experienceId, buyer, ticketId);
         }
 
         function setPrice(uint256 experienceId, uint256 price) external onlyHost(experienceId) {

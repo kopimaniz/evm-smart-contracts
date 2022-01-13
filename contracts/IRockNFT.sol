@@ -25,8 +25,7 @@ interface IRockNFT {
         function mintRock(
                 uint256 metaverseId, 
                 address owner,
-                uint256 rentalFee,
-                string memory tokenURI
+                uint256 rentalFee
         ) external returns (uint256 rockId);
 
         // Breeds a new rock from its parents
@@ -36,8 +35,7 @@ interface IRockNFT {
                 address owner, 
                 uint256 dadId, 
                 uint256 momId, 
-                uint256 rentalFee,
-                string memory tokenURI
+                uint256 rentalFee
         ) external returns (uint256 childId);
 
         // add time slot for evnet on rock

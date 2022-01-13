@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./IParameterControl.sol";
 import "./IRove.sol";
 import "./IMetaverseNFT.sol";
-import "./ExperienceNFT.sol";
+import "./IExperienceNFT.sol";
 import "./IRockNFT.sol";
+import './proxy/transparentUpgradeableProxy.sol';
 
 /*
  * TODO:
@@ -21,7 +21,7 @@ import "./IRockNFT.sol";
  *
  */
 
-contract RockNFT is AccessControl, ERC721URIStorage {
+contract RockNFT is ERC721Upgradeable {
 
         // TODO: do we save gas cost if we use uint8?
         struct Rock {
@@ -89,7 +89,7 @@ contract RockNFT is AccessControl, ERC721URIStorage {
         IParameterControl _globalParameters;
         IRove _rove;
         IMetaverseNFT _metaverseNFT;
-        ExperienceNFT _experienceNFT;
+        IExperienceNFT _experienceNFT;
 
         mapping(uint256 => Rock) private _rocks;
         // mapping(uint256 => Lease) private _leases;
@@ -99,22 +99,41 @@ contract RockNFT is AccessControl, ERC721URIStorage {
                 _;
         }
 
+        modifier onlyMetaverseNFT() {
+                require(_msgSender() == address(_metaverseNFT), "only metaverse NFT");
+                _;
+        }
+
         event UpdateRockFee(address, uint256, uint256);
         event ExperienceContractCreated(address contractId);
 
         // admin of rock is metaverse nft
-        constructor(
-                IRove rove,
-                IParameterControl globalParameters,
-                IMetaverseNFT metaverseNFT
-        ) 
-                ERC721("Rock", "R")
-        {
-                _setupRole(DEFAULT_ADMIN_ROLE, address(metaverseNFT));
+        // constructor(
+        //         IRove rove,
+        //         IParameterControl globalParameters,
+        //         IMetaverseNFT metaverseNFT
+        // ) 
+        //         ERC721("Rock", "R")
+        // {
+        //         _setupRole(DEFAULT_ADMIN_ROLE, address(metaverseNFT));
+        //         _rove = rove;
+        //         _globalParameters = globalParameters;
+        //         _metaverseNFT = metaverseNFT;
+        //         _experienceNFT = new ExperienceNFT(address(this), address(metaverseNFT), globalParameters, address(rove));
+
+        //         emit ExperienceContractCreated(address(_experienceNFT));
+        // }
+
+        function initialize(IRove rove, IParameterControl globalParameters, IMetaverseNFT metaverseNFT, address experienceImpl, address implementationAdmin) initializer public {
+                __ERC721_init("Rock", "R");
                 _rove = rove;
                 _globalParameters = globalParameters;
                 _metaverseNFT = metaverseNFT;
-                _experienceNFT = new ExperienceNFT(address(this), address(metaverseNFT), globalParameters, address(rove));
+                _experienceNFT = IExperienceNFT(address(new TransparentUpgradeableProxy(
+                        address(experienceImpl), 
+                        implementationAdmin, 
+                        abi.encodeWithSignature('initialize(address,address,address,address)', address(this), address(metaverseNFT), address(globalParameters), address(rove))
+                )));
 
                 emit ExperienceContractCreated(address(_experienceNFT));
         }
@@ -122,11 +141,10 @@ contract RockNFT is AccessControl, ERC721URIStorage {
         function mintRock(
                 uint256 metaverseId, 
                 address owner, 
-                uint256 rentalFee,
-                string memory tokenURI
+                uint256 rentalFee
         )
                 external
-                onlyRole(DEFAULT_ADMIN_ROLE)
+                onlyMetaverseNFT()
                 returns (uint256)
         {
                 _counter.increment();
@@ -137,7 +155,6 @@ contract RockNFT is AccessControl, ERC721URIStorage {
                 r.rentalFee = rentalFee;
 
                 _mint(owner, i);
-                _setTokenURI(i, tokenURI);
 
                 return i;
         }
@@ -149,11 +166,10 @@ contract RockNFT is AccessControl, ERC721URIStorage {
                 address owner,
                 uint256 dadId, 
                 uint256 momId, 
-                uint256 rentalFee,
-                string memory tokenURI
+                uint256 rentalFee
         ) 
                 external 
-                onlyRole(DEFAULT_ADMIN_ROLE)
+                onlyMetaverseNFT()
                 returns (uint256) 
         {
                 require(ownerOf(dadId) == owner);
@@ -181,7 +197,6 @@ contract RockNFT is AccessControl, ERC721URIStorage {
                 //
 
                 _mint(owner, i);
-                _setTokenURI(i, tokenURI);
 
                 return i;
         }
@@ -256,19 +271,6 @@ contract RockNFT is AccessControl, ERC721URIStorage {
 
         function getExperienceNFT() external view returns (address) {
                 return address(_experienceNFT);
-        }
-
-        function supportsInterface(bytes4 interfaceId) 
-                public 
-                view 
-                virtual 
-                override(AccessControl, ERC721) 
-                returns (bool) 
-        { 
-                return 
-                        interfaceId == type(IERC721).interfaceId || 
-                        interfaceId == type(IERC721Metadata).interfaceId || 
-                        super.supportsInterface(interfaceId);
         }
 
         // TODO;

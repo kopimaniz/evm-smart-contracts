@@ -10,9 +10,7 @@ interface IExperienceNFT {
                 uint256 price,
                 uint256 start,
                 uint256 end,
-                uint256 totalTickets,
-                string memory ticketUrl,
-                string memory tokenURI
+                uint256 totalTickets
         ) external returns (uint256 experienceId);
 
         // Updates the ownership of multiple creators
@@ -38,8 +36,9 @@ interface IExperienceNFT {
         function setPrice(uint256 experienceId, uint256 price) external;
         // Events
         event UpdateCreators(uint256 experienceId, address[] creators, uint256[] shares);
-        event NewExperience(uint256 experienceId, uint256 start, uint256 end, uint256 tokenURI);
+        event NewExperience(uint256 experienceId, uint256 start, uint256 end, uint256 rockId, address host);
         event CollectPayment(uint256 experienceId, address creator, uint256 amount);
+        event NewTicket(uint256 experienceId, address buyer, uint256 ticketId);
         event UpdateTicketPrice(uint256 experienceId, uint256 price);
-        event NewTicket(uint256, address, string);
+        event TicketNFTCreated(address);
 }

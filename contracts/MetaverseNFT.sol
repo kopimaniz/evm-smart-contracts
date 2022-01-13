@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./IParameterControl.sol";
 import "./IRove.sol";
-import "./RockNFT.sol";
+import "./IRockNFT.sol";
 import "./utils/constants.sol";
 import "./IMetaverseNFT.sol";
+import './proxy/transparentUpgradeableProxy.sol';
 
 /**
  * @dev Implementation of the Metaverse element in Rove
@@ -23,7 +22,7 @@ import "./IMetaverseNFT.sol";
  *
  */
 
-contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
+contract MetaverseNFT is ERC721Upgradeable, Constant {
 
         struct Metaverse {
                 address metaverseDAO;
@@ -41,7 +40,7 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
 
         IParameterControl _globalParameters;
         IRove _rove;
-        RockNFT _rockNFT;
+        IRockNFT _rockNFT;
 
         mapping(uint256 => Metaverse) private _metaverses;
 
@@ -50,19 +49,32 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
                 _;
         }
 
-        event NewMetaverse(address owner, uint256 metaverseId, uint256[] rocks, uint256[] rentalFees, string[] rockTokenURIs, string tokenURI);
+        event NewMetaverse(address owner, uint256 metaverseId, uint256[] rocks, uint256 defaultFee);
         event Breed(address owner, uint256 dadId, uint256 momId, uint256 rockId, uint256 metaverseId, uint256 rentalFee);
         event RockContractCreated(address contractId);
 
-        constructor(
-                IParameterControl globalParameters,
-                IRove rove
-        ) 
-                ERC721("Metaverse", "M") 
-        {
-                _globalParameters = globalParameters;
+        // constructor(
+        //         IParameterControl globalParameters,
+        //         IRove rove
+        // ) 
+        //         ERC721("Metaverse", "M") 
+        // {
+        //         _globalParameters = globalParameters;
+        //         _rove = rove;
+        //         _rockNFT = new RockNFT(rove, globalParameters, IMetaverseNFT(address(this)));
+
+        //         emit RockContractCreated(address(_rockNFT));
+        // }
+ 
+        function initialize(IParameterControl globalParameters, IRove rove, address rockImpl, address metaverseImpl, address implementationAdmin) initializer public {
+                __ERC721_init("Metaverse", "M");
                 _rove = rove;
-                _rockNFT = new RockNFT(rove, globalParameters, IMetaverseNFT(address(this)));
+                _globalParameters = globalParameters;
+                _rockNFT = IRockNFT(address(new TransparentUpgradeableProxy(
+                        rockImpl, 
+                        implementationAdmin, 
+                        abi.encodeWithSignature('initialize(address,address,address,address,address)', address(rove), address(globalParameters), address(this), metaverseImpl, implementationAdmin)
+                )));
 
                 emit RockContractCreated(address(_rockNFT));
         }
@@ -70,18 +82,16 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
         function mintMetaverse(
                 address founder,
                 address metaverseDAO,
-                uint256[] memory rentalFees,
-                string[] memory rockTokenURIs,
-                Revenue memory revenue,
-                string memory tokenURI
+                uint256 numberOfGenesisRocks,
+                uint256 defaultFee,
+                Revenue memory revenue
         )
                 external
                 returns (uint256)
         {
-                require(rentalFees.length == rockTokenURIs.length, "MetaverseNFT: input rentalFees and tokeURI are not match");
-                require(rentalFees.length > 1, "MetaverseNFT: at least 2 genesis rocks created");
+                require(numberOfGenesisRocks > 1, "MetaverseNFT: at least 2 genesis rocks created");
                 require(revenue.salesTaxRate < MAX_PERCENT && revenue.propertyTaxRate < MAX_PERCENT, "MetaverseNFT: invalid tax rates");
-                _rove.transferFrom(_msgSender(), address(uint160(_globalParameters.get(GLOBAL_ROVE_DAO))), _globalParameters.get(ROCK_BREEDING_FEE) * rentalFees.length); 
+                _rove.transferFrom(_msgSender(), address(uint160(_globalParameters.get(GLOBAL_ROVE_DAO))), _globalParameters.get(ROCK_BREEDING_FEE) * numberOfGenesisRocks); 
                 _counter.increment();
                 uint256 i = _counter.current();
 
@@ -90,30 +100,13 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
                 m.metaverseDAO = metaverseDAO;
 
                 _mint(founder, i);
-                _setTokenURI(i, tokenURI);
-                uint[] memory rocks = new uint256[](rentalFees.length);
-                rocks = _mintGenesisRocks(i, founder, rentalFees.length, rentalFees, rockTokenURIs);
-
-                emit NewMetaverse(founder, i, rocks, rentalFees, rockTokenURIs, tokenURI);
-                return i;
-        }
-
-        function _mintGenesisRocks(
-                uint256 metaverseId, 
-                address owner, 
-                uint256 numberOfGenesisRocks,
-                uint256[] memory rentalFees,
-                string[] memory rockTokenURIs
-        ) 
-                internal 
-                returns (uint256[] memory)
-        {
-                uint256[] memory rocks = new uint256[](numberOfGenesisRocks);
-                for (uint256 i = 0; i < numberOfGenesisRocks; i++) {
-                        rocks[i] = _rockNFT.mintRock(metaverseId, owner, rentalFees[i], rockTokenURIs[i]);
+                uint[] memory rocks = new uint256[](numberOfGenesisRocks);
+                for (uint256 j = 0; i < numberOfGenesisRocks; i++) {
+                        rocks[j] = _rockNFT.mintRock(i, founder, defaultFee);
                 }
 
-                return rocks;
+                emit NewMetaverse(founder, i, rocks, defaultFee);
+                return i;
         }
 
         // @dev given 2 rock parents, breed a new child rock
@@ -122,8 +115,7 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
                 uint256 metaverseId, 
                 uint256 dadId, 
                 uint256 momId, 
-                uint256 rentalFee,
-                string memory tokenURI
+                uint256 rentalFee
         ) 
                 external 
                 returns (uint256) 
@@ -139,7 +131,7 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
                         _rove.transferFrom(owner, m.metaverseDAO, metaverseBreedingFee);
                 }
 
-                uint256 childId = _rockNFT.breedRock(metaverseId, owner, dadId, momId, rentalFee, tokenURI);
+                uint256 childId = _rockNFT.breedRock(metaverseId, owner, dadId, momId, rentalFee);
 
                 emit Breed(owner, dadId, momId, childId, metaverseId, rentalFee);
                 return childId;
@@ -165,41 +157,4 @@ contract MetaverseNFT is AccessControl, ERC721URIStorage, Constant {
         function getMetaverseDAO(uint256 metaverseId) external view returns(address) {
                 return _metaverses[metaverseId].metaverseDAO;
         }
-
-        function supportsInterface(bytes4 interfaceId) 
-                public 
-                view 
-                virtual 
-                override(AccessControl, ERC721) 
-                returns (bool) 
-        { 
-                return 
-                        interfaceId == type(IERC721).interfaceId || 
-                        interfaceId == type(IERC721Metadata).interfaceId || 
-                        super.supportsInterface(interfaceId);
-        }
-
-        // function setBreedingFee(uint256 metaversId, uint256 breedingFee) external {
-        //         _metaverses[metaversId].revenue.breedingFee = breedingFee;
-        // }
-
-        // function setSalesTaxRate(uint256 metaversId, uint256 salesTaxRate) external {
-        //         _metaverses[metaversId].revenue.salesTaxRate = salesTaxRate;
-        // }
-
-        // function setPropertyTaxRate(uint256 metaversId, uint256 propertyTaxRate) external {
-        //         _metaverses[metaversId].revenue.propertyTaxRate = propertyTaxRate;
-        // }
-
-        // function getBreedingFee(uint256 metaversId) external view returns (uint256) {
-        //         return _metaverses[metaversId].revenue.breedingFee;
-        // }
-
-        // function getSalesTaxRate(uint256 metaversId) external view returns (uint256) {
-        //         return _metaverses[metaversId].revenue.salesTaxRate;
-        // }
-
-        // function getPropertyTaxRate(uint256 metaversId) external view returns (uint256) {
-        //         return _metaverses[metaversId].revenue.propertyTaxRate;
-        // }
 }

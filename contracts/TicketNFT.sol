@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract TicketNFT is AccessControl, ERC721URIStorage {
+contract TicketNFT is AccessControl, ERC721 {
 
 
         using Counters for Counters.Counter;
@@ -15,7 +15,10 @@ contract TicketNFT is AccessControl, ERC721URIStorage {
                 _setupRole(DEFAULT_ADMIN_ROLE, admin);
         }
 
-        function mintTicket(address rover, string memory tokenURI)
+        // mapping experience with ticket
+        mapping (uint256 => uint256) public tickets;
+
+        function mintTicket(address rover, uint256 experienceId)
                 public
                 onlyRole(DEFAULT_ADMIN_ROLE)
                 returns (uint256)
@@ -24,7 +27,7 @@ contract TicketNFT is AccessControl, ERC721URIStorage {
 
                 uint256 i = _counter.current();
                 _mint(rover, i);
-                _setTokenURI(i, tokenURI);
+                tickets[i] = experienceId;
 
                 return i;
         }
