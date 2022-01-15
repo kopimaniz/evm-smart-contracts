@@ -26,6 +26,7 @@ const ROCK_TIME_COST_UNIT = '3600';
 const HOSTING_FEE = '1000';
 const GLOBAL_ROVE_DAO = adminDefault;
 const GLOBAL_SALES_TAX = '1000';
+const MAX_ROCKS_IN_TX = 30;
 
 module.exports = async function(deployer, network, accounts) {
   if (network != 'development') {
@@ -33,12 +34,12 @@ module.exports = async function(deployer, network, accounts) {
   }
   // todo: update accordingly to the network
   const adminDefault = accounts[0];
-  const adminImplementation = accounts[2];
+  const adminImplementation = '0x126748A0144968DD14b0187B906dE62378c59067';
   await deployer.deploy(Rove, adminDefault);
   const roveIns = await Rove.deployed();
   await deployer.deploy(NameNFT, adminDefault);
   const nameNFT = await NameNFT.deployed();
-  await deployer.deploy(ParameterControl, adminDefault, ROCK_BREEDING_FEE, ROCK_RENTING_FEE, ROCK_TIME_COST_UNIT, HOSTING_FEE, GLOBAL_ROVE_DAO, GLOBAL_SALES_TAX);
+  await deployer.deploy(ParameterControl, adminDefault, ROCK_BREEDING_FEE, ROCK_RENTING_FEE, ROCK_TIME_COST_UNIT, HOSTING_FEE, GLOBAL_ROVE_DAO, GLOBAL_SALES_TAX, MAX_ROCKS_IN_TX);
   const parameterControlIns = await ParameterControl.deployed();
   
   // deploy metaverseNFT

@@ -24,7 +24,8 @@ contract ParameterControl is Constant {
                 uint256 costPerUnit,
                 uint256 hostingFee,
                 uint160 globalRoveDao,
-                uint256 salesTax
+                uint256 salesTax,
+                uint256 maxRocks
         ) {
                 _admin = admin;
                 _params[ROCK_BREEDING_FEE] = breedingFee;
@@ -33,6 +34,7 @@ contract ParameterControl is Constant {
                 _params[HOSTING_FEE] = hostingFee;
                 _params[GLOBAL_ROVE_DAO] = globalRoveDao;
                 _params[GLOBAL_SALES_TAX] = salesTax;
+                _params[MAX_ROCKS_IN_TX] = maxRocks;
         }
 
         function get(string memory key) external view returns (uint256) {

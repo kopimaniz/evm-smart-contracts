@@ -57,6 +57,7 @@ interface IMetaverseNFT {
 
         // Events
         event NewMetaverse(address owner, uint256 metaverseId, uint256[] rocks, uint256 defaultFee);
+        event MintNewGenensisRockes(address owner, uint256 metaverseId, uint256[] rocks, uint256 defaultFee);
         event Breed(address owner, uint256 dadId, uint256 momId, uint256 rockId, uint256 metaverseId, uint256 rentalFee);
         event RockContractCreated(address contractId);
 }

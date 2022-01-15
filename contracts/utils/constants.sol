@@ -8,5 +8,6 @@ contract Constant {
     string constant public HOSTING_FEE = "HOSTING_FEE";
     string constant public GLOBAL_ROVE_DAO = "GLOBAL_ROVE_DAO";
     string constant public GLOBAL_SALES_TAX = "GLOBAL_SALES_TAX";
+    string constant public MAX_ROCKS_IN_TX = "MAX_ROCKS_IN_TX";
     uint256 constant public MAX_PERCENT = 100000;
 }

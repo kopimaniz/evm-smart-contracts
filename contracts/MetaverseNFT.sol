@@ -27,6 +27,7 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
         struct Metaverse {
                 address metaverseDAO;
                 Revenue revenue;
+                uint256 genesisLeft;
         }
 
         struct Revenue {
@@ -50,6 +51,7 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
         }
 
         event NewMetaverse(address owner, uint256 metaverseId, uint256[] rocks, uint256 defaultFee);
+        event MintNewGenensisRockes(address owner, uint256 metaverseId, uint256[] rocks, uint256 defaultFee);
         event Breed(address owner, uint256 dadId, uint256 momId, uint256 rockId, uint256 metaverseId, uint256 rentalFee);
         event RockContractCreated(address contractId);
 
@@ -100,6 +102,10 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
                 m.metaverseDAO = metaverseDAO;
 
                 _mint(founder, i);
+                uint256 getMaxRockInTx = _globalParameters.get(MAX_ROCKS_IN_TX);
+                if (numberOfGenesisRocks > getMaxRockInTx) {
+                        m.genesisLeft = numberOfGenesisRocks - getMaxRockInTx;
+                }
                 uint[] memory rocks = new uint256[](numberOfGenesisRocks);
                 for (uint256 j = 0; j < numberOfGenesisRocks; j++) {
                         rocks[j] = _rockNFT.mintRock(i, founder, defaultFee);
@@ -107,6 +113,17 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
 
                 emit NewMetaverse(founder, i, rocks, defaultFee);
                 return i;
+        }
+
+        function mintGenesisBlock(uint256 metaverseId, uint256 numberOfGenesisRocks, uint256 defaultFee) onlyOwner(metaverseId) external {
+                _metaverses[metaverseId].genesisLeft -= numberOfGenesisRocks;
+                address founder = ownerOf(metaverseId);
+                uint[] memory rocks = new uint256[](numberOfGenesisRocks);
+                for (uint256 j = 0; j < numberOfGenesisRocks; j++) {
+                        rocks[j] = _rockNFT.mintRock(metaverseId, founder, defaultFee);
+                }
+
+                emit MintNewGenensisRockes(founder, metaverseId, rocks, defaultFee);
         }
 
         // @dev given 2 rock parents, breed a new child rock
