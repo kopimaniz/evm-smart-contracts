@@ -223,8 +223,13 @@ contract RockNFT is ERC721Upgradeable {
                                         r = m - 1;
                                 }
                         }
-                        require(l % 2 != 0 && start != rock.timeSlots[l], "this slot has been occupied!");
-                        require(rock.timeSlots[l + 1] > end, "end time overlapped!");
+                        string memory revertMsg = "this slot has been occupied!";
+                        if (l % 2 == 1) {
+                                require(start != rock.timeSlots[l] && rock.timeSlots[l + 1] > end, revertMsg);
+                                l += 1;
+                        } else {
+                                require(l == 0 && rock.timeSlots[l] > end, revertMsg);
+                        }
                         _rocks[rockId].timeSlots = insertAtIndex(l, start, end, rock.timeSlots);
                 }
         }
@@ -233,12 +238,12 @@ contract RockNFT is ERC721Upgradeable {
                 uint256[] memory newBookedTimes = new uint[](bookedTimes.length + 2);
                 uint j = 0;
                 for (uint i = 0; i < newBookedTimes.length;) {
-                        newBookedTimes[i] = bookedTimes[j];
                         if (i == index) {
-                                newBookedTimes[i+1] = start;
-                                newBookedTimes[i+2] = end;
+                                newBookedTimes[i] = start;
+                                newBookedTimes[i+1] = end;
                                 i += 2;
                         }
+                        newBookedTimes[i] = bookedTimes[j];
                         j++;
                         i++;
                 }                

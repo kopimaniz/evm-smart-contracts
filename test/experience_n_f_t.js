@@ -91,7 +91,6 @@ contract("ExperienceNFT", function (accounts) {
     await roveToken.mint(accounts[1], mintAmount);
     await roveToken.approve(experienceNFT.address, mintAmount, {from: accounts[1]});
     const approved = await roveToken.allowance(accounts[1], experienceNFT.address);
-    console.log('approved ', approved.toString());
     assert.equal(true, approved.toString() === mintAmount.toString());
 
     await truffleAssert.reverts(experienceNFT.mintExperience(
@@ -104,7 +103,6 @@ contract("ExperienceNFT", function (accounts) {
       )
     );
     let roveBeforeEvent = await roveToken.balanceOf(accounts[1]);
-    console.log(roveBeforeEvent.toString());
 
     const start = Math.floor(Date.now() / 1000) + 700;
     const end = Math.floor(Date.now() / 1000) + 900;
@@ -118,10 +116,99 @@ contract("ExperienceNFT", function (accounts) {
      { from: accounts[1] },
     );
     let roveAfterEvent = await roveToken.balanceOf(accounts[1]);
-    console.log(roveAfterEvent.toString());
     assert.equal(1, roveBeforeEvent.cmp(roveAfterEvent));
     const bal = await experienceNFT.balanceOf(accounts[1]);
     assert.equal(1, bal.cmp(web3.utils.toBN(0)));
+  });
+
+  it('test overlap events', async () => {
+    await experienceNFT.mintExperience(
+      1,
+      web3.utils.toBN(1e18),
+      Math.floor(Date.now() / 1000) + 30,
+      Math.floor(Date.now() / 1000) + 80,
+      2,
+     { from: accounts[1] },
+    );
+
+
+    await truffleAssert.reverts(experienceNFT.mintExperience(
+      1,
+      web3.utils.toBN(1e18),
+      Math.floor(Date.now() / 1000) + 40,
+      Math.floor(Date.now() / 1000) + 60,
+      2,
+     { from: accounts[1] },
+    ));
+
+    await truffleAssert.reverts(experienceNFT.mintExperience(
+      1,
+      web3.utils.toBN(1e18),
+      Math.floor(Date.now() / 1000) + 20,
+      Math.floor(Date.now() / 1000) + 40,
+      2,
+     { from: accounts[1] },
+    ));
+
+    await truffleAssert.reverts(experienceNFT.mintExperience(
+      1,
+      web3.utils.toBN(1e18),
+      Math.floor(Date.now() / 1000) + 20,
+      Math.floor(Date.now() / 1000) + 80,
+      2,
+     { from: accounts[1] },
+    ));
+
+    await truffleAssert.reverts(experienceNFT.mintExperience(
+      1,
+      web3.utils.toBN(1e18),
+      Math.floor(Date.now() / 1000) + 50,
+      Math.floor(Date.now() / 1000) + 90,
+      2,
+     { from: accounts[1] },
+    ));
+
+    const rockInfo = await rockNFT.getRock(1);
+    console.log(rockInfo);
+  });
+
+  it('creators claim tokens', async () => {
+    const start = Math.floor(Date.now() / 1000) + 2;
+    const end = Math.floor(Date.now() / 1000) + 12;
+
+    await experienceNFT.mintExperience(
+      1,
+      web3.utils.toBN(1e18),
+      start,
+      end,
+      2,
+     { from: accounts[1] },
+    );
+    await truffleAssert.reverts(experienceNFT.updateCreators(3, [accounts[3], accounts[4], accounts[1]], [40, 40, 20]));
+    await experienceNFT.updateCreators(3, [accounts[3], accounts[4], accounts[1]], [40, 40, 20], {from: accounts[1]});
+
+    await experienceNFT.getTicket(3);
+    await roveToken.mint(accounts[5], web3.utils.toBN(100e18));
+    await roveToken.approve(experienceNFT.address, web3.utils.toBN('100000000000000000000'), {from: accounts[5]});
+    await experienceNFT.getTicket(3, {from: accounts[5]});
+    await truffleAssert.reverts(experienceNFT.getTicket(3, {from: accounts[1]}));
+
+    await truffleAssert.reverts(experienceNFT.collectPayment(3, {from: accounts[3]}));
+    await truffleAssert.reverts(experienceNFT.collectPayment(3, {from: accounts[4]}));
+
+    while (true) {
+      if (Math.floor(Date.now() / 1000) > end) {
+        break;
+      }
+    }
+
+    await truffleAssert.reverts(experienceNFT.collectPayment(3, {from: accounts[2]}));
+    await truffleAssert.reverts(experienceNFT.updateCreators(3, [accounts[3], accounts[4], accounts[1]], [40, 40, 20], {from: accounts[1]}));
+
+
+    await experienceNFT.collectPayment(3, {from: accounts[4]});
+    await experienceNFT.collectPayment(3, {from: accounts[3]})
+
   });
 
 });

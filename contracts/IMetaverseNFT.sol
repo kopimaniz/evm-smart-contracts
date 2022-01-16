@@ -33,6 +33,13 @@ interface IMetaverseNFT {
                 uint256 rentalFee
         ) external returns (uint256 childId);
 
+        // mint new genesis rock => only metaverse owner
+        function mintGenesisBlock(
+                uint256 metaverseId, 
+                uint256 numberOfGenesisRocks, 
+                uint256 defaultFee
+        ) external;
+
         // Getters
         // function getRocks(uint256 metaversId) external view returns (uint256[] memory);
         // function getSalesTaxRate(uint256 metaversId) external view returns (uint256);

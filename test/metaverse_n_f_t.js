@@ -13,6 +13,7 @@ contract("MetaverseNFT", function (accounts) {
   let metaverseNFT;
   let roveToken;
   let rockNFT;
+  const MAX_ROCKS_IN_TX = 30;
 
   before("should init instance of contracts", async function () {
     const tranparent = await TransparentUpgradeableProxy.deployed();
@@ -42,13 +43,10 @@ contract("MetaverseNFT", function (accounts) {
   it('create new metaverse', async () => {
     await roveToken.approve(metaverseNFT.address, web3.utils.toBN('100000000000000000000'), {from: accounts[0]});
     await metaverseNFT.mintMetaverse(accounts[0], accounts[0], numberOfgenesisRock, defaultFee, revenue);
-    await metaverseNFT.mintMetaverse(accounts[0], accounts[0], numberOfgenesisRock, defaultFee, revenue);
     const bal = await metaverseNFT.balanceOf(accounts[0]); 
     const globaDAOBal = await roveToken.balanceOf("0xD3605808CcdFd0e61515D53a0D2E13c3c9107505");
-    console.log(globaDAOBal.toString());
-    console.log(bal.toString());
 
-    assert.equal(-1, web3.utils.toBN(1).cmp(bal));
+    assert.equal(0, web3.utils.toBN(1).cmp(bal));
     assert.equal(-1, web3.utils.toBN(0).cmp(globaDAOBal));
     
     // check ownership
@@ -59,6 +57,28 @@ contract("MetaverseNFT", function (accounts) {
     assert.equal(owner2, accounts[0]);
     assert.equal(owner1, accounts[0]);
     assert.equal(owner3, accounts[0]);
+  });
+
+  it('create new metaverse with genesisrock exceeded max rock', async () => {
+    await roveToken.mint(accounts[2], web3.utils.toBN(100e18));
+    await roveToken.approve(metaverseNFT.address, web3.utils.toBN('100000000000000000000'), {from: accounts[2]});
+    await metaverseNFT.mintMetaverse(accounts[2], accounts[0], MAX_ROCKS_IN_TX + 1, defaultFee, revenue, {from: accounts[2]});
+    const bal = await metaverseNFT.balanceOf(accounts[2]); 
+    assert.equal(0, web3.utils.toBN(1).cmp(bal));
+
+    let balRock = await rockNFT.balanceOf(accounts[2]); 
+    assert.equal(0, web3.utils.toBN(MAX_ROCKS_IN_TX).cmp(balRock));
+
+    // mint new genesis rock
+    await truffleAssert.reverts(metaverseNFT.mintGenesisBlock(2, 2, defaultFee, {from: accounts[2]}));
+    await truffleAssert.reverts(metaverseNFT.mintGenesisBlock(2, 1, defaultFee, {from: accounts[0]}));
+
+    await metaverseNFT.mintGenesisBlock(2, 1, defaultFee, {from: accounts[2]});
+    balRock = await rockNFT.balanceOf(accounts[2]); 
+    assert.equal(0, web3.utils.toBN(MAX_ROCKS_IN_TX + 1).cmp(balRock));
+
+    await truffleAssert.reverts(metaverseNFT.mintGenesisBlock(2, 1, defaultFee, {from: accounts[2]}));
+
   });
 
   it('breed two rocks', async () => {

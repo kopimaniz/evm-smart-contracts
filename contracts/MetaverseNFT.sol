@@ -105,6 +105,7 @@ contract MetaverseNFT is ERC721Upgradeable, Constant {
                 uint256 getMaxRockInTx = _globalParameters.get(MAX_ROCKS_IN_TX);
                 if (numberOfGenesisRocks > getMaxRockInTx) {
                         m.genesisLeft = numberOfGenesisRocks - getMaxRockInTx;
+                        numberOfGenesisRocks = getMaxRockInTx;
                 }
                 uint[] memory rocks = new uint256[](numberOfGenesisRocks);
                 for (uint256 j = 0; j < numberOfGenesisRocks; j++) {
