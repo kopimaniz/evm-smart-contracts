@@ -184,17 +184,18 @@ contract("ExperienceNFT", function (accounts) {
       2,
      { from: accounts[1] },
     );
-    await truffleAssert.reverts(experienceNFT.updateCreators(3, [accounts[3], accounts[4], accounts[1]], [40, 40, 20]));
-    await experienceNFT.updateCreators(3, [accounts[3], accounts[4], accounts[1]], [40, 40, 20], {from: accounts[1]});
+    const experienceId = 4;
+    await truffleAssert.reverts(experienceNFT.updateCreators(experienceId, [accounts[3], accounts[4], accounts[1]], [40, 40, 20]));
+    await experienceNFT.updateCreators(experienceId, [accounts[3], accounts[4], accounts[1]], [40, 40, 20], {from: accounts[1]});
 
-    await experienceNFT.getTicket(3);
+    await experienceNFT.getTicket(experienceId);
     await roveToken.mint(accounts[5], web3.utils.toBN(100e18));
     await roveToken.approve(experienceNFT.address, web3.utils.toBN('100000000000000000000'), {from: accounts[5]});
-    await experienceNFT.getTicket(3, {from: accounts[5]});
-    await truffleAssert.reverts(experienceNFT.getTicket(3, {from: accounts[1]}));
+    await experienceNFT.getTicket(experienceId, {from: accounts[5]});
+    await truffleAssert.reverts(experienceNFT.getTicket(experienceId, {from: accounts[1]}));
 
-    await truffleAssert.reverts(experienceNFT.collectPayment(3, {from: accounts[3]}));
-    await truffleAssert.reverts(experienceNFT.collectPayment(3, {from: accounts[4]}));
+    await truffleAssert.reverts(experienceNFT.collectPayment(experienceId, {from: accounts[3]}));
+    await truffleAssert.reverts(experienceNFT.collectPayment(experienceId, {from: accounts[4]}));
 
     while (true) {
       if (Math.floor(Date.now() / 1000) > end) {
@@ -202,13 +203,20 @@ contract("ExperienceNFT", function (accounts) {
       }
     }
 
-    await truffleAssert.reverts(experienceNFT.collectPayment(3, {from: accounts[2]}));
-    await truffleAssert.reverts(experienceNFT.updateCreators(3, [accounts[3], accounts[4], accounts[1]], [40, 40, 20], {from: accounts[1]}));
+    await truffleAssert.reverts(experienceNFT.collectPayment(experienceId, {from: accounts[2]}));
+    await truffleAssert.reverts(experienceNFT.updateCreators(experienceId, [accounts[3], accounts[4], accounts[1]], [40, 40, 20], {from: accounts[1]}));
 
+    const balBefore3 = await roveToken.balanceOf(accounts[3]);
+    const balBefore4 = await roveToken.balanceOf(accounts[4]);
+    assert.equal(0, web3.utils.toBN(0).cmp(balBefore3));
+    assert.equal(0, web3.utils.toBN(0).cmp(balBefore4));
+    await experienceNFT.collectPayment(experienceId, {from: accounts[4]});
+    await experienceNFT.collectPayment(experienceId, {from: accounts[3]})
 
-    await experienceNFT.collectPayment(3, {from: accounts[4]});
-    await experienceNFT.collectPayment(3, {from: accounts[3]})
-
+    const balAfter3 = await roveToken.balanceOf(accounts[3]);
+    const balAfter4 = await roveToken.balanceOf(accounts[4]);
+    assert.equal(-1, web3.utils.toBN(0).cmp(balAfter3));
+    assert.equal(-1, web3.utils.toBN(0).cmp(balAfter4));
   });
 
 });
