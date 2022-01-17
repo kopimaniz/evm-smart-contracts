@@ -59,7 +59,7 @@ module.exports = {
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
     bsctestnet: {
-      provider: () => new PrivateKeyProvider(process.env.PRIV_KEY, "https://data-seed-prebsc-1-s1.binance.org:8545"),
+      provider: () => new PrivateKeyProvider(process.env.PRIV_KEY, "https://data-seed-prebsc-2-s3.binance.org:8545"),
       network_id: 97,       // Ropsten's id
       gasPrice: 1e10,        // Ropsten has a lower block limit than mainnet
       confirmations: 1,    // # of confs to wait between deployments. (default: 0)

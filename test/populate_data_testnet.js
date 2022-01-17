@@ -9,9 +9,9 @@ const TransparentUpgradeableProxy = artifacts.require("TransparentUpgradeablePro
  * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
  */
 contract("Popular data", function (accounts) {
-    const metaverseAddress = '0x122ED36983916E93ccF47B8D184EC7Edb0F50D4d';
-    const rovoTokenAddress = '0xd3DE6fD3B3Ec1D4460899ff32da968cC6D30Aabc';
-    const rockNFTAddresss = '0x17cCE681944784f16eD07a3EFfA609159Bc6d8FE';
+    const metaverseAddress = '0x05E01879bC38A0789fECF7922Ea38C120Cd61fb0';
+    const rovoTokenAddress = '0xf87a690C4b6cbf7a8e320Fd1DC7e447E7E8a32b0';
+    const rockNFTAddresss = '0xC137D5490CBCFADD75FDa76395344252c973ccAE';
     let metaverseNFT;
     let roveToken;
     let rockNFT;

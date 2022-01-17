@@ -211,6 +211,7 @@ contract("ExperienceNFT", function (accounts) {
     assert.equal(0, web3.utils.toBN(0).cmp(balBefore3));
     assert.equal(0, web3.utils.toBN(0).cmp(balBefore4));
     await experienceNFT.collectPayment(experienceId, {from: accounts[4]});
+    await truffleAssert.reverts(experienceNFT.collectPayment(experienceId, {from: accounts[4]}));
     await experienceNFT.collectPayment(experienceId, {from: accounts[3]})
 
     const balAfter3 = await roveToken.balanceOf(accounts[3]);
