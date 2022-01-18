@@ -64,7 +64,7 @@ module.exports = {
       gasPrice: 1e10,        // Ropsten has a lower block limit than mainnet
       confirmations: 1,    // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 200,
-      skipDryRun: true
+      skipDryRun: false
     },
     // Useful for private networks
     // private: {
